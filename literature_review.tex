@@ -1,0 +1,152 @@
+\documentclass[twocolumn]{article}
+\usepackage[utf8]{inputenc}
+\usepackage{graphicx}
+\usepackage{array}
+\usepackage{hyperref}
+\usepackage[table]{xcolor}
+\usepackage{geometry}
+\geometry{a4paper, margin=1in}
+
+\begin{document}
+
+\title{Literature Review: Network and Graph Models for Flight Delay Prediction and Intervention}
+\author{Pranish Uprety \\ Advisor: Dr. Sushil Poudel}
+\date{}
+\maketitle
+
+\begin{table*}[htbp]
+\centering
+\setlength{\tabcolsep}{0.8\tabcolsep}
+\def\arraystretch{1.5}
+\caption{Foundational and Predictive GNN Models for Flight Delay}
+
+\rowcolors{2}{gray!15}{white}
+\begin{tabular}{|p{1.5cm}|p{1.5cm}|p{2.5cm}|p{2cm}|p{2cm}|p{1.5cm}|p{1.5cm}|p{1.5cm}|p{1cm}|}
+\rowcolor{gray!25}
+\hline
+\textbf{Paper / Year} & \textbf{Target / Dataset} & \textbf{Approach} & \textbf{Limitations} & \textbf{Advantages} & \textbf{Model} & \textbf{Prediction Method} & \textbf{Research Gap} & \textbf{Citation} \\
+\hline
+Cai et al., 2023 & Multi-airport network / Chinese Aviation Data \& ADS-B & Geographical and Operational Graph Convolutional Network (GOGCN) & Lacks causal intervention tracking; strictly observational & Outperforms traditional GCNs by separating geographical and operational features & GOGCN (Spatio-temporal GNN) & Spatial-temporal graph interactions & Transitioning from pure prediction to causal simulation of interventions & \cite{cai2023}\\
+\hline
+Zeng et al., 2021 & Time-evolving networks / US BTS Data & Deep learning tracking topological shifts via time-evolving graphs & High computational overhead; uses static thresholding for delay states & Captures dynamic temporal shifts in airport connections as disruptions propagate & Time-evolving GCN & Temporal network sequence prediction & Incorporating dynamic simulation of air traffic control interventions & \cite{zeng2021}\\
+\hline
+Jiang et al., 2022 & Network-wide delays / Historical graphs & Multi-task local-global graph network balancing local and system constraints & Cannot predict unobserved counterfactual outcomes (e.g., weather rerouting) & Efficiently balances local node features with macro-level network constraints & Multi-task local-global GNN & Multi-task node and graph-level regression & Simulating downstream impact of targeted ground-hold interventions & \cite{jiang2022}\\
+\hline
+Guo et al., 2020 & Departure delays, multi-hour horizon / airport network & Spatio-Temporal Graph Dual-Attention Network (SGDAN) embedding graph- and sequence-level attention & Pure prediction; no counterfactual or intervention modeling & Dual attention captures spatial graph and temporal sequence dependence for advance forecasts & SGDAN (dual-attention ST-GNN) & Graph + sequence attention regression & Extending advance forecasts into actionable intervention planning & \cite{guo2020}\\
+\hline
+Vasana et al., 2025 & Airport systems as spatiotemporal graphs & GNN that separates local delays from network-induced cascading delays and infers delay causes & Diagnostic separation of causes, not prescriptive intervention & Distinguishes local vs cascading sources and attributes delay causes & Spatio-temporal GNN & Node delay prediction with cause inference & Turning cause attribution into intervention recommendations & \cite{vasana2025}\\
+\hline
+Kim, 2024 & Applied ST-GNN delay forecasting (CS224W) & Practical ST-GNN framework balancing direct operational cost against cascading network disruption & Tutorial scope; limited formal evaluation and peer review & Accessible, operationally framed cost trade-off perspective & Spatio-temporal GNN & ST graph forecasting & Formalizing the cost trade-off as an intervention optimization & \cite{kim2024}\\
+\hline
+\end{tabular}
+\end{table*}
+
+\begin{table*}[htbp]
+\centering
+\setlength{\tabcolsep}{0.8\tabcolsep}
+\def\arraystretch{1.5}
+\caption{Causal, Edge-centric, Benchmark, and Network Science Studies}
+\rowcolors{2}{gray!15}{white}
+\begin{tabular}{|p{1.5cm}|p{1.5cm}|p{2.5cm}|p{2cm}|p{2cm}|p{1.5cm}|p{1.5cm}|p{1.5cm}|p{1cm}|}
+\rowcolor{gray!25}
+\hline
+\textbf{Paper / Year} & \textbf{Target / Dataset} & \textbf{Approach} & \textbf{Limitations} & \textbf{Advantages} & \textbf{Model} & \textbf{Prediction Method} & \textbf{Research Gap} & \textbf{Citation} \\
+\hline
+Zhu et al., 2024 & Inter-airport delay propagation / real flight networks & CausalNet: ST-GNN using Granger causality to dynamically construct causality graphs & Granger causality is statistical, not interventional; remains observational & Learns dynamic, data-driven causal structure instead of a fixed adjacency matrix & CausalNet (causal ST-GNN) & Granger-causal dynamic graph + ST prediction & Moving from observational Granger causality to simulated do-interventions & \cite{zhu2024}\\
+\hline
+Tang et al., 2026 & Operational flight connectivity / edge-centric delay & Edge-based GNN introducing delay width and delay strength metrics, moving past the node-to-edge paradigm & Optimizes representation fidelity rather than intervention outcomes & Preserves high-fidelity operational connectivity at the edge level & Edge-based GNN & Edge-feature delay prediction & Using high-fidelity edge representation to evaluate intervention effects & \cite{tang2026}\\
+\hline
+Franco et al., 2026 & Holding maneuvers / Directed multigraphs (OpenSky/NOAA) & Formulates holding maneuvers as edge feature prediction using Graph ML & Imbalanced data causes pure GATs to struggle with precision compared to CatBoost & Directly targets operational anomalies (holding) using graph centrality features & GAT and CatBoost & Edge feature prediction for holding events & Scaling graph features to simulate how local holdings cascade globally & \cite{franco2026}\\
+\hline
+Xu et al., 2025 & Multi-modal flight delay benchmark (tabular, sequential, graph) & Aeolus: large-scale dataset with strict temporal leakage prevention across modalities & A benchmark and dataset, not a predictive or intervention model itself & Enables fair, leakage-free comparison of tabular, sequential, and graph models & Dataset / benchmark (model-agnostic) & Standardized multi-modal evaluation protocol & Adding intervention and counterfactual scenarios to the benchmark & \cite{xu2025}\\
+\hline
+Fleurquin et al., 2013 & US airport network / Historical flight records & Network science approach to map systemic delay propagation & Lacks predictive deep learning capability for preemptive mitigation & First to clearly demonstrate the systemic "ripple effect" of delays using real data & Network centrality / Complex systems & Statistical delay propagation tracking & Bridging complex systems mapping with actionable predictive deep learning & \cite{fleurquin2013}\\
+\hline
+\end{tabular}
+\end{table*}
+
+\begin{table*}[htbp]
+\centering
+\setlength{\tabcolsep}{0.8\tabcolsep}
+\def\arraystretch{1.5}
+\caption{Real-World Disruption Events and Policy Analyses (Evaluation Targets for Phase 2.4)}
+\rowcolors{2}{gray!15}{white}
+\begin{tabular}{|p{2.2cm}|p{2.6cm}|p{3.2cm}|p{3.2cm}|p{2.8cm}|p{1cm}|}
+\rowcolor{gray!25}
+\hline
+\textbf{Event / Year} & \textbf{Source / Method} & \textbf{What Happened} & \textbf{Quantified Impact} & \textbf{Relevance to This Work} & \textbf{Citation} \\
+\hline
+2025 federal shutdown & Richmond Fed Economic Brief; difference-in-differences on 76M BTS flight operations across 82 airports & 43-day shutdown from Oct. 1 strained controller staffing; FAA-initiated traffic-flow delays rose sharply after conditioning on NOAA weather and seasonality & About 1 million extra work-hours of delay, roughly \$66 million nationwide (delays significant at the 1\% level) & A clean, weather-controlled causal benchmark of system-wide delay under a known disruption; ideal ground truth for counterfactual evaluation & \cite{richmondfed2025}\\
+\hline
+2025 federal shutdown & Center for Transportation Policy report (policy analysis) & FAA imposed blanket 10\% flight reductions at 40 major airports rather than a targeted, data-driven strategy & More than 9,000 flights canceled, over 6 million passengers affected, an estimated \$7.25 billion economic hit (over \$150M per day) & Motivates targeted interventions over blunt cuts, the exact intervention-selection question this model addresses & \cite{ctp2026}\\
+\hline
+Jan. 2023 NOTAM outage & ICAO information paper and US DOT testimony & A corrupted database file made the NOTAM system unreliable; FAA issued a nationwide ground stop from 7:15 to 9:07 a.m. EST on Jan. 11 & More than 1,300 flights canceled and nearly 10,000 delayed; airborne aircraft caused surface congestion and diversions on recovery & A single, well-documented system-wide shock already named as an evaluation event; tests recovery and cascade modeling & \cite{icao2023notam}\\
+\hline
+2018--2019 federal shutdown & FAA statements and contemporaneous reporting & On day 35, a small increase in controller sick leave at two East Coast facilities forced a LaGuardia ground stop and traffic metering & Hundreds of flights delayed at LGA, EWR, PHL, and ATL; inbound LaGuardia delays averaged about 1 hour 26 minutes & Demonstrates how a tiny localized staffing shock cascades nationally, the core propagation phenomenon being modeled & \cite{npr2019}\\
+\hline
+\end{tabular}
+\end{table*}
+
+\section{Paper Summaries}
+
+\subsection{A geographical and operational deep graph convolutional approach for flight delay prediction \cite{cai2023}}
+\textbf{Objective:} To predict flight delays across multiple airports by capturing hidden geographical and operational spatial-temporal interactions. \\
+\textbf{Methodology:} The authors developed a Geographical and Operational Graph Convolutional Network (GOGCN) with dual aggregators, one for global operational flight connectivity and one for geographical proximity. \\
+\textbf{Outcomes:} The GOGCN model significantly improved prediction accuracy over traditional baseline GCNs. \\
+\textbf{Gaps:} The methodology relies strictly on observational data and does not simulate how the network responds to active interventions like ground holds. \\
+\textbf{Future Directions:} Extending the model to handle dynamic airspace capacities and incorporating more granular meteorological data. \\
+\textbf{Conclusion:} Separating geographic and operational data allows GCNs to better represent delay propagation across aviation networks. \\
+\textbf{Key Contributions:} 1) The creation of dual aggregators to capture different dynamics. 2) A tailored GCN architecture for aviation network delays.
+
+\subsection{A deep learning approach for flight delay prediction through time-evolving graphs \cite{zeng2021}}
+\textbf{could only get preview:} need access
+
+\subsection{CausalNet: Granger-causality-driven spatio-temporal graph network for delay propagation \cite{zhu2024}}
+\textbf{Objective:} To model inter-airport delay propagation by learning the causal structure between airports rather than assuming a fixed graph. \\
+\textbf{Methodology:} A spatio-temporal GNN (CausalNet) applies Granger causality inference to dynamically construct time-varying causality graphs that drive message passing. \\
+\textbf{Outcomes:} Dynamic causal graphs improve propagation modeling over static-adjacency baselines. \\
+\textbf{Gaps:} Granger causality captures statistical predictive causation, not the interventional ``do-operator'' causation needed to evaluate ground holds or reroutes. \\
+\textbf{Future Directions:} Coupling learned causal graphs with simulated interventions to estimate counterfactual outcomes. \\
+\textbf{Conclusion:} Learning the causal graph dynamically is a strong step toward causal delay modeling, but stops short of intervention reasoning. \\
+\textbf{Key Contributions:} 1) Dynamic Granger-causal graph construction. 2) A causal framing of delay propagation that this proposal extends toward true interventions.
+
+\subsection{Aeolus: a multi-modal benchmark for flight delay models \cite{xu2025}}
+\textbf{Objective:} To provide a rigorous, leakage-free benchmark for comparing tabular, sequential, and graph-based delay models. \\
+\textbf{Methodology:} The authors assemble a large multi-modal dataset with strict temporal leakage prevention so that future information cannot contaminate training. \\
+\textbf{Outcomes:} A standardized protocol that exposes how models truly generalize across modalities. \\
+\textbf{Gaps:} The benchmark evaluates predictive accuracy only and contains no intervention or counterfactual tasks. \\
+\textbf{Future Directions:} Extending the benchmark with simulated intervention scenarios and counterfactual ground truth. \\
+\textbf{Conclusion:} Aeolus is a useful evaluation backbone, and an intervention benchmark like the one proposed here would complement it. \\
+\textbf{Key Contributions:} 1) Multi-modal, leakage-controlled evaluation. 2) A fair comparison surface for graph versus non-graph models.
+
+\subsection{Edge-based GNN with delay width and delay strength \cite{tang2026}}
+\textbf{Objective:} To represent flight delay at the level of operational connections rather than airports alone. \\
+\textbf{Methodology:} An edge-based GNN introduces delay width and delay strength metrics, departing from the conventional node-to-edge paradigm to preserve high-fidelity connectivity. \\
+\textbf{Outcomes:} More faithful representation of operational flight connectivity and its delay characteristics. \\
+\textbf{Gaps:} The work targets representation fidelity and does not estimate the effect of interventions. \\
+\textbf{Future Directions:} Using the richer edge representation to quantify how interventions reshape connectivity. \\
+\textbf{Conclusion:} Edge-centric modeling captures operational structure that node-centric models lose. \\
+\textbf{Key Contributions:} 1) Delay width and delay strength edge metrics. 2) A high-fidelity edge-based alternative to node-to-edge encoding.
+
+\subsection{Graph machine learning for flight delay prediction due to holding maneuver \cite{franco2026}}
+\textbf{Objective:} To predict flight delays specifically caused by aircraft holding maneuvers utilizing Graph Machine Learning. \\
+\textbf{Methodology:} The problem is formulated as edge feature prediction in a directed multigraph. The authors compared Graph Attention Networks (GAT) with tree-based CatBoost enhanced by network centrality features. \\
+\textbf{Outcomes:} CatBoost using graph-derived features outperformed GAT because it better handled the severe class imbalance inherent to holding anomalies. \\
+\textbf{Gaps:} Standard deep GAT architectures currently struggle with the high class imbalance found in specific operational anomalies. \\
+\textbf{Future Directions:} Developing custom GNN loss functions tailored for imbalanced data to improve fuel efficiency and predictive accuracy. \\
+\textbf{Conclusion:} Graph-based features are essential for understanding localized delays, but robust classifiers may be needed alongside GNNs for highly imbalanced edge cases. \\
+\textbf{Key Contributions:} 1) Targeting holding maneuvers as a distinct edge-prediction task. 2) Proving that network centrality features boost standard model performance on imbalanced aviation datasets.
+
+\subsection{The value of government services: evidence from flight delays during the 2025 shutdown \cite{richmondfed2025}}
+\textbf{Objective:} To quantify the system-wide flight-delay cost caused by the 2025 federal government shutdown. \\
+\textbf{Methodology:} A difference-in-differences design over 76 million flight operations since 2022 across 82 major U.S. airports (BTS), focusing on FAA-initiated traffic-flow management delays and controlling for detailed NOAA weather and airport-specific seasonality. \\
+\textbf{Outcomes:} The shutdown produced about 1 million extra work-hours of delay, roughly \$66 million nationwide, with effects significant at the 1\% level after weather and seasonality controls. \\
+\textbf{Gaps:} The study estimates aggregate causal impact but does not model alternative interventions at the network level. \\
+\textbf{Future Directions:} Pairing causal impact estimates with intervention-outcome models to guide mitigation policy. \\
+\textbf{Conclusion:} A government shutdown measurably and significantly raised FAA-driven delays beyond what weather can explain. \\
+\textbf{Key Contributions:} 1) A weather-controlled causal estimate of shutdown-driven delay. 2) A real-world counterfactual benchmark this proposal can validate against.
+
+\bibliographystyle{IEEEtran}
+\bibliography{references}
+
+\end{document}

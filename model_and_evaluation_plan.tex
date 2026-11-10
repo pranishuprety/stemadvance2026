@@ -1,0 +1,125 @@
+\documentclass[11pt]{article}
+\usepackage[utf8]{inputenc}
+\usepackage[T1]{fontenc}
+\usepackage{geometry}
+\geometry{a4paper, margin=1in}
+\usepackage{booktabs}
+\usepackage{amsmath}
+\usepackage{array}
+\usepackage{hyperref}
+\hypersetup{colorlinks=true, linkcolor=blue, citecolor=blue, urlcolor=blue}
+
+\title{Predictive Model and Proof-of-Concept Plan:\\
+Forecasting Flight Delays and Validating on the 2025 Government Shutdown}
+\author{Pranish Uprety \\ Advisor: Dr. Sushil Poudel}
+\date{\today}
+
+\begin{document}
+\maketitle
+
+\section{Goal}
+The objective is a publishable proof of concept: a flight-delay prediction model
+built on a set of meaningful input factors, validated by predicting a known
+real-world disruption (the 2025 federal government shutdown) and comparing the
+model's output against what actually happened. The lower the prediction error on
+this held-out disruption, the stronger the evidence that the model captures the
+real drivers of delay. We focus on the New York metropolitan sub-network
+(EWR, JFK, LGA) within the Northeast corridor, where we have already shown that
+delay propagates directionally (Newark drives JFK and LaGuardia roughly one hour
+later, Pearson $r \approx 0.57$, BTS January 2023).
+
+\section{The Predictive Model}
+\paragraph{Target.} The model predicts an airport's delay for a future time
+window (next hour, and later next day), measured as mean departure delay in
+minutes per airport-hour.
+
+\paragraph{Inputs (key factors).} The model combines local, network, weather,
+operational, staffing, and economic factors (Table~\ref{tab:factors}).
+
+\paragraph{Model progression.} We start simple and add complexity only if it
+helps: (1) regularized regression as a baseline; (2) gradient-boosted trees for
+nonlinear interactions; (3) the spatio-temporal graph neural network with the
+intervention head, which is the eventual contribution. Each step is compared on
+the same held-out data so improvements are attributable.
+
+\begin{table}[h]
+\centering
+\small
+\caption{Key factors (features) for the delay-prediction model.}
+\label{tab:factors}
+\begin{tabular}{>{\raggedright}p{2.6cm} >{\raggedright}p{6.2cm} p{3.4cm}}
+\toprule
+\textbf{Group} & \textbf{Factors} & \textbf{Source} \\
+\midrule
+Temporal & hour of day, day of week, holiday, season & BTS schedule \\
+Local history & airport's own delay at $t{-}1,t{-}2,t{-}3$ & BTS on-time \\
+Network (graph) & upstream-neighbor delays (the propagation signal) & BTS on-time \\
+Traffic / congestion & scheduled departures and arrivals per hour, live density & BTS, OpenSky \\
+Weather & wind, visibility, ceiling, precipitation; or BTS WeatherDelay & NOAA METAR / BTS \\
+Operational & late-aircraft delay, carrier delay, NAS delay, taxi-out & BTS on-time \\
+Staffing / disruption & ground stops, ground delay programs, shutdown indicator & FAA, news/policy \\
+Economic (finance) & cost-of-delay per minute, passengers affected, \$ impact & FAA, BTS T-100 \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\section{Proof of Concept: the 2025 Shutdown Test}
+\paragraph{Idea.} Train the model on normal operations, then ask it to predict
+delays during the 2025 shutdown window, a period it was not trained on, and
+compare its predictions against the actual recorded delays. Good predictions on
+an unusual, high-stress period are strong evidence the model generalizes.
+
+\paragraph{Protocol.}
+\begin{enumerate}
+  \item Train on pre-shutdown months (normal operations).
+  \item Predict delays across the 43-day shutdown period (Oct.\ 1 onward, 2025).
+  \item Compare predicted vs.\ actual BTS delays; report error.
+  \item Cross-check the implied excess delay against the published Richmond Fed
+        difference-in-differences estimate ($\sim$1M extra delay work-hours,
+        $\sim\$66$M), an external counterfactual benchmark.
+\end{enumerate}
+
+\paragraph{Why the shutdown is ideal.} It is a large, well-documented, real
+disruption with an external economic estimate to validate against, and it
+directly exercises the staffing factor (controllers working unpaid, increased
+sick leave, FAA-imposed flight cuts), which a purely weather-based model would
+miss.
+
+\section{Evaluation Metrics}
+\begin{itemize}
+  \item \textbf{MAE / RMSE} (minutes): average prediction error. Lower is better.
+  \item \textbf{$R^2$}: fraction of delay variation explained on held-out data.
+  \item \textbf{Feature ablations}: remove one factor group at a time to show
+        which factors matter (e.g., does the network signal add value over local
+        plus weather?).
+  \item \textbf{Economic error}: convert predicted vs.\ actual delay into dollars
+        and compare to the published shutdown cost estimate.
+\end{itemize}
+
+\section{Data To Collect (for the actual experiments later)}
+\begin{table}[h]
+\centering
+\small
+\caption{Datasets required to run the full proof of concept.}
+\begin{tabular}{>{\raggedright}p{3.6cm} >{\raggedright}p{5.2cm} p{3.4cm}}
+\toprule
+\textbf{Data} & \textbf{Use} & \textbf{Source} \\
+\midrule
+BTS on-time (2022--2025) & delays, schedules, delay causes & transtats.bts.gov \\
+2025 shutdown window & test period actuals & BTS \\
+NOAA METAR & weather controls & weather.gov / NOAA \\
+OpenSky ADS-B & live and historical traffic density & opensky-network.org \\
+FAA cost-of-delay & dollar conversion & faa.gov \\
+Richmond Fed brief & external counterfactual benchmark & richmondfed.org \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\section{This Week and Next Steps}
+This week was a data-and-design week: scoping the factor list above, identifying
+the data sources, and defining the shutdown proof-of-concept protocol. Next steps
+are to collect the multi-year BTS slices and the 2025 shutdown window, add weather
+as the first new factor, and run the train-on-normal / test-on-shutdown
+comparison to get the first end-to-end error number.
+
+\end{document}

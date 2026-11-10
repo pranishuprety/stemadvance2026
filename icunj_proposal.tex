@@ -1,0 +1,141 @@
+\documentclass[11pt]{article}
+\usepackage[margin=1in]{geometry}
+\usepackage{times}
+\usepackage[hidelinks]{hyperref}
+\usepackage{titlesec}
+\titlespacing*{\section}{0pt}{6pt}{2pt}
+\titleformat{\section}{\normalfont\large\bfseries}{}{0pt}{}
+\setlength{\parskip}{4pt}
+\setlength{\parindent}{0pt}
+
+\begin{document}
+
+\begin{center}
+{\Large\bfseries Measuring and Forecasting the Impact of the 2025 U.S.\
+Government Shutdown on New York Airport Delays}\\[4pt]
+{\normalsize Student Investigator: Pranish Uprety, Department of Computer
+Science, Caldwell University}\\
+{\normalsize Faculty Advisor: Dr.\ Sushil Poudel}\\
+{\normalsize ICUNJ Research Symposium --- Description of Research}
+\end{center}
+
+\section*{Rationale for the Proposed Research}
+Flight delays are a familiar frustration for travelers, but they are also a
+major economic problem: on average, a single minute of delay costs an airline
+about \$100 once crew, fuel, and aircraft costs are counted. Delays are rarely
+isolated. Because airports share the same aircraft, crews, and airspace, trouble
+at one busy airport spreads to its neighbors, much like a traffic jam that backs
+up onto connecting roads. In the fall of 2025, the United States experienced its
+longest-ever federal government shutdown (43 days). Air-traffic controllers were
+required to work without pay, staffing shortages grew, and the Federal Aviation
+Administration eventually ordered airlines to cut flights at 40 major airports.
+This unusual, well-documented event is a rare ``natural experiment'': it lets us
+measure what happens to the air-travel system when a key government service is
+disrupted. This research asks three simple but important questions about the New
+York City airports (Newark, JFK, and LaGuardia), the busiest and most
+interconnected airport cluster in the country: (1) How much worse did delays and
+cancellations actually get? (2) Was the increase caused by the shutdown, or could
+it be explained away by bad weather? (3) Could the disruption have been predicted
+ahead of time using only information the public already had?
+
+\section*{Relevant Background Literature}
+Three strands of prior work motivate this study. First, foundational network
+research by Fleurquin and colleagues showed that delays ``ripple'' across the
+U.S.\ airport network in a measurable, systemic way, establishing that airports
+cannot be studied in isolation~[1]. Second, recent computer-science work uses
+graph-based machine learning to predict delays across airport networks; for
+example, Cai and colleagues built a model that separates the geographic and
+operational connections between airports to improve delay prediction~[2], and
+Zhu and colleagues developed ``CausalNet,'' which tries to learn cause-and-effect
+relationships between airports rather than assuming a fixed map~[3]. These models
+predict or diagnose delays but do not measure the effect of a specific real-world
+disruption. Third, an economic study from the Federal Reserve Bank of Richmond
+analyzed 76 million flights and estimated that the 2025 shutdown added roughly
+one million extra hours of delay nationwide (about \$66 million), even after
+accounting for weather~[4]. That study works at the national level; the present
+project complements it by zooming into a single, tightly coupled metro region and
+by adding a forecasting test. The industry cost figure used throughout comes from
+Airlines for America, which reports a direct operating cost of \$100.76 per
+minute of delay for 2024~[5].
+
+\section*{Research Procedures}
+The project uses only free, publicly available data, so it is fully reproducible.
+The main data source is the U.S.\ Bureau of Transportation Statistics on-time
+performance database, which records the scheduled and actual departure time of
+essentially every U.S.\ flight. Hourly weather observations for the three New
+York airports are taken from the Iowa Environmental Mesonet archive. The
+procedure has four steps. (1)~\textbf{Preparation:} clean the flight records and
+organize them into an ``airport-by-hour'' table showing the average delay at each
+airport in each hour, for the shutdown period (October--November 2025) and the
+same months of the previous, normal year (2024) for comparison. (2)~\textbf{
+Measurement:} compare the two years directly, including how often flights were
+cancelled outright. (3)~\textbf{Attribution:} estimate the ``excess'' delay
+caused specifically by the shutdown using three independent methods (a simple
+prior-year comparison and two machine-learning models, one of which also accounts
+for weather), then check whether the three methods agree. (4)~\textbf{
+Forecasting:} test whether a model that knows \emph{only} the calendar, the
+scheduled number of flights, and the public fact that a shutdown was underway,
+with no access to actual delays, could anticipate the disruption better than a
+normal-year expectation.
+
+\section*{Specific Means of Evaluation of Findings}
+Each finding is judged against a clear, quantitative standard rather than
+opinion. For the size of the delay increase, statistical significance tests
+(a Welch $t$-test and a bootstrap confidence interval) determine whether the
+change is real or could be normal year-to-year variation. For the cost estimate,
+credibility comes from \emph{agreement} among the three independent methods: if
+they converge on a similar number, the estimate is trustworthy, and the
+weather-adjusted method specifically tests whether weather, not the shutdown,
+was responsible. For the forecasting question, the shutdown-aware model is scored
+against a naive ``normal-year'' baseline using standard accuracy measures
+($R^2$ and mean absolute error) on data the model never saw during training, so
+it cannot simply memorize the answer.
+
+\section*{Significance of the Potential Findings}
+This work turns a major national event into concrete, local, dollar-denominated
+evidence of what happens to air travel when government services are interrupted.
+A clear, weather-controlled measurement of the shutdown's cost to the New York
+airports would give policymakers and the public a tangible sense of the stakes,
+and complement existing national estimates. Showing that the disruption was
+partly \emph{forecastable} from public information suggests that similar events
+could be anticipated and managed rather than merely reacted to. More broadly, the
+results lay the groundwork for future ``intervention-aware'' models that could
+help decide where and when to slow traffic to minimize nationwide disruption.
+
+\section*{Preliminary Work and Feasibility}
+This proposal builds on substantial work already completed during summer 2026,
+so the timetable is realistic. The full data pipeline is built and the analyses
+have been run. Preliminary results are strong and consistent: average departure
+delay rose 107\% at JFK and 149\% at LaGuardia (both highly statistically
+significant), cancellations rose three- to eight-fold, and the three independent
+methods agree that the shutdown caused roughly 0.40--0.42 million extra minutes
+of delay, about \$41 million in direct airline cost, which weather does not
+explain. The forecasting test succeeds: a model using only advance information
+outperforms a normal-year baseline at all three airports. A draft research paper
+documenting these results is already in preparation. The remaining work,
+finalizing figures, writing, and revising for presentation, is well within the
+symposium timeline.
+
+\section*{References}
+{\small
+[1] P.\ Fleurquin, J.\ J.\ Ramasco, and V.\ M.\ Egu\'iluz, ``Systemic delay
+propagation in the US airport network,'' \textit{Scientific Reports}, vol.\ 3,
+p.\ 1159, 2013.
+
+[2] K.\ Cai, Y.\ Li, Y.-P.\ Fang, and Y.\ Zhu, ``A geographical and operational
+deep graph convolutional approach for flight delay prediction,'' \textit{Chinese
+Journal of Aeronautics}, vol.\ 36, no.\ 3, pp.\ 357--367, 2023.
+                          
+[3] Q.\ Zhu, S.\ Chen, T.\ Guo, Y.\ Lv, and W.\ Du, ``CausalNet: A
+Granger-causality-driven spatio-temporal graph neural network for flight delay
+propagation,'' arXiv:2407.15185, 2024.
+
+[4] R.\ T.-N.\ Wong, ``The Value of Government Services: Evidence from Flight
+Delays During the 2025 Shutdown,'' Federal Reserve Bank of Richmond, Economic
+Brief 25-45, 2025.
+
+[5] Airlines for America, ``U.S.\ Passenger Carrier Delay Costs,'' 2025.
+CY2024 direct operating cost of delay: \$100.76 per block-minute.
+}
+
+\end{document}

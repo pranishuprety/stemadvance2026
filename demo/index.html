@@ -1,0 +1,347 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Flight Delay Intervention Prototype</title>
+<style>
+  :root{
+    --bg:#f4f7fb; --card:#ffffff; --ink:#16202e; --soft:#5b6b80; --line:#e3e9f2;
+    --sky:#0ea5e9; --amber:#f59e0b; --orange:#fb6f3a; --emerald:#16b981;
+    --rose:#f43f5e; --indigo:#6366f1; --violet:#7c5cff;
+  }
+  *{box-sizing:border-box}
+  body{margin:0;background:var(--bg);color:var(--ink);
+    font-family:"Segoe UI",Roboto,Helvetica,Arial,sans-serif;}
+  header{padding:20px 28px;background:linear-gradient(100deg,#0ea5e9,#6366f1);color:#fff;}
+  header h1{margin:0;font-size:21px;font-weight:700}
+  header p{margin:5px 0 0;opacity:.92;font-size:13.5px}
+  .live{display:inline-flex;align-items:center;gap:7px;background:rgba(255,255,255,.18);
+    padding:4px 11px;border-radius:20px;font-size:12.5px;margin-top:10px}
+  .pulse{width:9px;height:9px;border-radius:50%;background:#22f5a0;box-shadow:0 0 0 0 #22f5a0;
+    animation:p 1.6s infinite}
+  @keyframes p{0%{box-shadow:0 0 0 0 rgba(34,245,160,.7)}70%{box-shadow:0 0 0 8px rgba(34,245,160,0)}100%{box-shadow:0 0 0 0 rgba(34,245,160,0)}}
+  .wrap{display:grid;grid-template-columns:1fr 380px;gap:20px;padding:22px 28px;max-width:1400px}
+  .card{background:var(--card);border:1px solid var(--line);border-radius:16px;padding:18px;
+    box-shadow:0 6px 22px rgba(20,40,80,.06)}
+  .card h2{font-size:15px;margin:0 0 4px;font-weight:700}
+  .card .hint{font-size:12.5px;color:var(--soft);margin:0 0 12px}
+  canvas{width:100%;height:auto;display:block;border-radius:12px;
+    background:linear-gradient(180deg,#eef5ff,#e6effb);border:1px solid var(--line)}
+  .clock{font-size:13px;color:var(--soft);margin-top:8px;text-align:center}
+  .legend{display:flex;gap:18px;flex-wrap:wrap;font-size:12.5px;color:var(--soft);margin-top:10px}
+  .dot{width:11px;height:11px;border-radius:50%;display:inline-block;margin-right:6px;vertical-align:-1px}
+  .plane{color:var(--indigo)}
+  label{display:block;font-size:13px;font-weight:600;color:var(--ink);margin:16px 0 6px}
+  .row{font-size:12px;color:var(--soft);text-align:right;margin-top:3px}
+  select,input[type=range]{width:100%}
+  select{padding:9px;border:1px solid var(--line);border-radius:9px;background:#fff;color:var(--ink);font-size:14px}
+  .switch{display:flex;gap:11px;align-items:center;margin-top:16px;padding:13px;border-radius:12px;
+    background:#fff7ec;border:1px solid #f6dcae;cursor:pointer}
+  .switch input{width:20px;height:20px;accent-color:var(--orange)}
+  .switch b{font-size:13.5px}.switch span{font-size:12px;color:var(--soft)}
+  .btns{display:flex;gap:10px;margin-top:18px}
+  button{flex:1;border:0;border-radius:11px;padding:12px;font-size:14px;font-weight:700;cursor:pointer}
+  #play{background:var(--orange);color:#fff}
+  #reset{background:#eef2f8;color:var(--ink)}
+  .metrics{display:grid;grid-template-columns:1fr 1fr;gap:11px;margin-top:8px}
+  .m{border-radius:12px;padding:13px;border:1px solid var(--line)}
+  .m .v{font-size:25px;font-weight:800;line-height:1}
+  .m .l{font-size:11.5px;color:var(--soft);margin-top:5px}
+  .m.base{background:#fff1f3} .m.base .v{color:var(--rose)}
+  .m.intv{background:#eafaf3} .m.intv .v{color:var(--emerald)}
+  .saved{margin-top:12px;border-radius:12px;padding:15px;text-align:center;
+    background:linear-gradient(100deg,#16b981,#0ea5e9);color:#fff}
+  .saved .v{font-size:30px;font-weight:800}.saved .l{font-size:12.5px;opacity:.95}
+  .src{font-size:12px;color:var(--soft);margin-top:14px;line-height:1.55}
+  .src a{color:var(--indigo)}
+  .tag{display:inline-block;font-size:11px;font-weight:700;color:#0b6ea8;background:#dcf0fb;
+    border-radius:6px;padding:2px 8px;margin-left:6px}
+  table{width:100%;border-collapse:collapse;font-size:12.5px;margin-top:6px}
+  th,td{text-align:left;padding:6px 8px;border-bottom:1px solid var(--line)}
+  th{color:var(--soft);font-weight:600}
+  td.n{text-align:right;font-variant-numeric:tabular-nums;font-weight:700}
+</style>
+</head>
+<body>
+<header>
+  <h1>Flight Delay Intervention Prototype</h1>
+  <div class="live"><span class="pulse"></span><span id="liveLabel">connecting to live air traffic...</span></div>
+</header>
+
+<div class="wrap">
+  <div class="card">
+    <h2>Northeast corridor, live traffic and delay propagation</h2>
+    <p class="hint">Small arrows are real aircraft pulled from the OpenSky Network right now (proposal reference 7). Circles are airports, sized and colored by the modeled delay.</p>
+    <canvas id="map" width="880" height="600"></canvas>
+    <div class="clock" id="clock">set a scenario, then press run</div>
+    <div class="legend">
+      <span><span class="dot" style="background:#0ea5e9"></span>nominal</span>
+      <span><span class="dot" style="background:#f59e0b"></span>moderate delay</span>
+      <span><span class="dot" style="background:#f43f5e"></span>severe delay</span>
+      <span><span class="dot" style="background:#16b981"></span>intervention site</span>
+      <span class="plane">&#9650; live aircraft</span>
+    </div>
+  </div>
+
+  <div>
+    <div class="card">
+      <h2>Build a scenario</h2>
+      <p class="hint">Inject a disruption, then ask the model what a single intervention would have saved.</p>
+
+      <label>Disruption source</label>
+      <select id="source"></select>
+
+      <label>Severity, delay minutes injected</label>
+      <input type="range" id="severity" min="60" max="300" step="20" value="180" />
+      <div class="row" id="sevVal">180 min</div>
+
+      <label>Intervention</label>
+      <select id="intv">
+        <option value="ground">Ground delay program at source, hold outflow</option>
+        <option value="reroute">Metering on the busiest segments</option>
+      </select>
+
+      <div class="switch" id="switch">
+        <input type="checkbox" id="intvOn" />
+        <div><b>Apply the intervention</b><br><span>hold departures 30 min at 14:00</span></div>
+      </div>
+
+      <div class="btns">
+        <button id="play">Run propagation</button>
+        <button id="reset">Reset</button>
+      </div>
+    </div>
+
+    <div class="card" style="margin-top:18px">
+      <h2>System wide outcome</h2>
+      <p class="hint">Total delay summed across all airports over the next hour.</p>
+      <div class="metrics">
+        <div class="m base"><div class="v" id="mBase">0</div><div class="l">baseline, no action</div></div>
+        <div class="m intv"><div class="v" id="mIntv">0</div><div class="l">with intervention</div></div>
+      </div>
+      <div class="saved"><div class="v" id="mSaved">0 min</div><div class="l">downstream delay minutes prevented</div></div>
+    </div>
+
+    <div class="card" style="margin-top:18px">
+      <h2>Batch simulation sweep <span class="tag">evidence</span></h2>
+      <p class="hint">Runs the model across every source airport and a range of severities, then ranks where an intervention prevents the most delay.</p>
+      <div class="btns"><button id="batch" style="background:var(--indigo)">Run simulation sweep</button></div>
+      <div id="batchInfo" class="clock"></div>
+      <table>
+        <thead><tr><th>Source airport</th><th style="text-align:right">avg delay prevented</th></tr></thead>
+        <tbody id="batchTable"><tr><td colspan="2" style="color:#9aa7b8">not run yet</td></tr></tbody>
+      </table>
+    </div>
+
+    <div class="card" style="margin-top:18px">
+      <h2>Live traffic near each hub <span class="tag">real data</span></h2>
+      <p class="hint">Airborne aircraft counted within roughly 25 nm of each airport, refreshed every 12 seconds from OpenSky.</p>
+      <table>
+        <thead><tr><th>Airport</th><th style="text-align:right">aircraft nearby</th></tr></thead>
+        <tbody id="liveTable"><tr><td colspan="2" style="color:#9aa7b8">loading...</td></tr></tbody>
+      </table>
+    </div>
+
+    <div class="card src">
+      Live aircraft positions: OpenSky Network ADS-B, Schaefer et al. 2014. Delay cost context, FAA Cost of Delay. The propagation model here is an intentionally simple placeholder so the counterfactual question is visible. The real work is calibrating it against BTS and OpenSky histories and replacing it with the trained graph network.
+    </div>
+  </div>
+</div>
+
+<script>
+const AIRPORTS = {
+  BOS:{lat:42.36,lon:-71.01,name:"Boston"}, ALB:{lat:42.75,lon:-73.80,name:"Albany"},
+  BUF:{lat:42.94,lon:-78.73,name:"Buffalo"}, BDL:{lat:41.94,lon:-72.68,name:"Hartford"},
+  LGA:{lat:40.78,lon:-73.87,name:"LaGuardia"}, JFK:{lat:40.64,lon:-73.78,name:"JFK"},
+  EWR:{lat:40.69,lon:-74.17,name:"Newark"}, PHL:{lat:39.87,lon:-75.24,name:"Philadelphia"},
+  PIT:{lat:40.49,lon:-80.23,name:"Pittsburgh"}, BWI:{lat:39.18,lon:-76.67,name:"Baltimore"},
+  DCA:{lat:38.85,lon:-77.04,name:"Reagan"}, IAD:{lat:38.95,lon:-77.46,name:"Dulles"}
+};
+const EDGES = [
+  ["BOS","LGA",.9],["BOS","JFK",.8],["BOS","EWR",.8],["BOS","DCA",.7],["BOS","PHL",.6],["BOS","ALB",.4],["BOS","BDL",.5],
+  ["LGA","JFK",.5],["LGA","DCA",.9],["LGA","PHL",.6],["LGA","BUF",.5],["LGA","ALB",.4],
+  ["JFK","EWR",.6],["JFK","IAD",.7],["JFK","DCA",.6],
+  ["EWR","DCA",.9],["EWR","IAD",.8],["EWR","PHL",.7],["EWR","BUF",.6],["EWR","PIT",.7],["EWR","BWI",.6],
+  ["PHL","DCA",.7],["PHL","PIT",.6],["PHL","BWI",.5],
+  ["DCA","IAD",.5],["DCA","BWI",.6],["BWI","PIT",.5],["BUF","ALB",.4],["PIT","IAD",.4]
+];
+const NODES = Object.keys(AIRPORTS);
+const adj = {}; NODES.forEach(n=>adj[n]=[]);
+EDGES.forEach(([a,b,w])=>{adj[a].push([b,w]);adj[b].push([a,w]);});
+
+const cv=document.getElementById('map'), ctx=cv.getContext('2d');
+const W=cv.width, H=cv.height, PAD=64;
+// fixed geographic frame so live planes and airports share coordinates
+const FR={minLon:-80.6,maxLon:-70.2,minLat:38.3,maxLat:43.4};
+function proj(lat,lon){
+  const x=PAD+(lon-FR.minLon)/(FR.maxLon-FR.minLon)*(W-2*PAD);
+  const y=PAD+(1-(lat-FR.minLat)/(FR.maxLat-FR.minLat))*(H-2*PAD);
+  return {x,y};
+}
+
+const srcSel=document.getElementById('source');
+NODES.forEach(n=>{const o=document.createElement('option');o.value=n;o.textContent=n+"  "+AIRPORTS[n].name;srcSel.appendChild(o);});
+srcSel.value="EWR";
+const sev=document.getElementById('severity'), sevVal=document.getElementById('sevVal');
+const intvOn=document.getElementById('intvOn'), intvType=document.getElementById('intv');
+const clockEl=document.getElementById('clock');
+const play_btn=document.getElementById('play'), reset_btn=document.getElementById('reset');
+const mBase=document.getElementById('mBase'), mIntv=document.getElementById('mIntv'), mSaved=document.getElementById('mSaved');
+sev.oninput=()=>{sevVal.textContent=sev.value+" min"; recompute();};
+
+const STEPS=10, DECAY=0.78, SPREAD=0.34;
+let liveAircraft=[], nearCount={};
+
+function simulate(apply, opts){
+  const src=(opts&&opts.src)||srcSel.value;
+  const sevMin=(opts&&opts.sevMin)||+sev.value;
+  const intvKind=(opts&&opts.intv)||intvType.value;
+  let d={}; NODES.forEach(n=>d[n]=0); d[src]=sevMin;
+  const hist=[{...d}];
+  for(let t=0;t<STEPS;t++){
+    let nd={...d};
+    NODES.forEach(n=>{
+      adj[n].forEach(([m,w])=>{
+        let c=SPREAD*w;
+        // real traffic raises coupling: busier sky carries delay further
+        const load=(nearCount[m]||0);
+        c*=(1+Math.min(load,12)/24);
+        if(apply){
+          if(intvKind==="ground" && n===src) c*=0.25;
+          if(intvKind==="reroute" && w>=0.85) c*=0.45;
+        }
+        nd[m]+=d[n]*c*DECAY*(1/adj[m].length);
+      });
+      nd[n]*=DECAY;
+    });
+    d=nd; hist.push({...d});
+  }
+  return hist;
+}
+const total=h=>Math.round(h.reduce((s,d)=>s+NODES.reduce((a,n)=>a+d[n],0),0));
+
+let histBase=[],histIntv=[],frame=0,anim=null,showIntv=false;
+function recompute(){
+  histBase=simulate(false); histIntv=simulate(true);
+  const tb=total(histBase), ti=total(histIntv);
+  mBase.textContent=tb.toLocaleString(); mIntv.textContent=ti.toLocaleString();
+  mSaved.textContent=Math.max(0,tb-ti).toLocaleString()+" min";
+  draw(frame);
+}
+const col=v=> v<25?"#0ea5e9": v<90?"#f59e0b":"#f43f5e";
+
+function draw(f){
+  ctx.clearRect(0,0,W,H);
+  // live aircraft first, underneath
+  ctx.fillStyle="rgba(99,102,241,.55)";
+  liveAircraft.forEach(a=>{
+    if(a.onground) return;
+    const p=proj(a.lat,a.lon);
+    if(p.x<0||p.x>W||p.y<0||p.y>H) return;
+    const ang=(a.track||0)*Math.PI/180;
+    ctx.save();ctx.translate(p.x,p.y);ctx.rotate(ang);
+    ctx.beginPath();ctx.moveTo(0,-4);ctx.lineTo(3,4);ctx.lineTo(-3,4);ctx.closePath();ctx.fill();
+    ctx.restore();
+  });
+  const hist=showIntv?histIntv:histBase;
+  const d=hist[Math.min(f,hist.length-1)];
+  const src=srcSel.value;
+  EDGES.forEach(([a,b,w])=>{
+    const pa=proj(AIRPORTS[a].lat,AIRPORTS[a].lon), pb=proj(AIRPORTS[b].lat,AIRPORTS[b].lon);
+    const load=(d[a]+d[b])/2;
+    ctx.strokeStyle=load>60?"rgba(244,63,94,.45)":"rgba(14,165,233,.20)";
+    ctx.lineWidth=.6+w*1.7;
+    ctx.beginPath();ctx.moveTo(pa.x,pa.y);ctx.lineTo(pb.x,pb.y);ctx.stroke();
+  });
+  NODES.forEach(n=>{
+    const p=proj(AIRPORTS[n].lat,AIRPORTS[n].lon), v=d[n];
+    const r=9+Math.min(28,v/5.5);
+    const isIntv=(n===src && showIntv && intvType.value==="ground");
+    ctx.beginPath();ctx.arc(p.x,p.y,r,0,7);
+    ctx.fillStyle=isIntv?"rgba(22,185,129,.18)":"rgba(14,165,233,.10)";ctx.fill();
+    ctx.beginPath();ctx.arc(p.x,p.y,7,0,7);
+    ctx.fillStyle=isIntv?"#16b981":col(v);ctx.fill();
+    ctx.fillStyle="#16202e";ctx.font="bold 12px Segoe UI";ctx.textAlign="center";
+    ctx.fillText(n,p.x,p.y-r-6);
+    if(v>3){ctx.fillStyle="#5b6b80";ctx.font="10px Segoe UI";ctx.fillText(Math.round(v)+"m",p.x,p.y+r+12);}
+  });
+  const clk=14*60+f*6, hh=String(Math.floor(clk/60)).padStart(2,'0'), mm=String(clk%60).padStart(2,'0');
+  clockEl.textContent=`${hh}:${mm} local  -  ${showIntv?"with intervention (the counterfactual)":"baseline, what the data records"}`;
+}
+
+function play(){
+  if(anim)clearInterval(anim);
+  frame=0;
+  anim=setInterval(()=>{
+    draw(frame); frame++;
+    if(frame>STEPS){
+      frame=0;
+      if(!showIntv && intvOn.checked){showIntv=true;}
+      else {clearInterval(anim);anim=null;}
+    }
+  },300);
+}
+play_btn.onclick=()=>{showIntv=false;recompute();play();};
+reset_btn.onclick=()=>{if(anim)clearInterval(anim);frame=0;showIntv=false;recompute();};
+srcSel.onchange=recompute; intvType.onchange=recompute;
+intvOn.onchange=()=>{showIntv=intvOn.checked&&showIntv;recompute();};
+document.getElementById('switch').onclick=e=>{if(e.target.tagName!=='INPUT'){intvOn.checked=!intvOn.checked;intvOn.onchange();}};
+
+document.getElementById('batch').onclick=()=>{
+  const sevs=[60,120,180,240,300];
+  const agg={}; let runs=0, best=0;
+  NODES.forEach(src=>{
+    let sum=0;
+    sevs.forEach(s=>{
+      const b=total(simulate(false,{src,sevMin:s,intv:'ground'}));
+      const i=total(simulate(true,{src,sevMin:s,intv:'ground'}));
+      sum+=Math.max(0,b-i); runs+=2;
+    });
+    agg[src]=Math.round(sum/sevs.length);
+    if(agg[src]>best) best=agg[src];
+  });
+  const rows=NODES.map(n=>[n,agg[n]]).sort((a,b)=>b[1]-a[1]);
+  document.getElementById('batchTable').innerHTML=rows.map(([n,v])=>{
+    const bar=best?Math.round(100*v/best):0;
+    return `<tr><td>${n} <span style="color:#9aa7b8">${AIRPORTS[n].name}</span></td>`+
+      `<td class="n">${v.toLocaleString()} min `+
+      `<span style="display:inline-block;height:7px;width:${bar}px;max-width:80px;background:#6366f1;border-radius:4px;vertical-align:middle;margin-left:4px"></span></td></tr>`;
+  }).join('');
+  document.getElementById('batchInfo').textContent=
+    `${runs} simulations across ${NODES.length} airports x ${sevs.length} severities (ground-hold), weighted by live traffic`;
+};
+
+function haversineNm(a,b){
+  const R=3440.065, toR=x=>x*Math.PI/180;
+  const dLat=toR(b.lat-a.lat), dLon=toR(b.lon-a.lon);
+  const s=Math.sin(dLat/2)**2+Math.cos(toR(a.lat))*Math.cos(toR(b.lat))*Math.sin(dLon/2)**2;
+  return 2*R*Math.asin(Math.sqrt(s));
+}
+async function pullTraffic(){
+  try{
+    const r=await fetch('/api/traffic'); const j=await r.json();
+    if(j.error) throw new Error(j.error);
+    liveAircraft=j.aircraft||[];
+    nearCount={}; NODES.forEach(n=>nearCount[n]=0);
+    liveAircraft.forEach(a=>{
+      if(a.onground) return;
+      let best=null,bd=1e9;
+      NODES.forEach(n=>{const dd=haversineNm(a,AIRPORTS[n]); if(dd<bd){bd=dd;best=n;}});
+      if(best && bd<=25) nearCount[best]++;
+    });
+    document.getElementById('liveLabel').textContent=
+      `${j.count} aircraft airborne over the Northeast right now`;
+    const rows=NODES.map(n=>[n,nearCount[n]]).sort((a,b)=>b[1]-a[1]);
+    document.getElementById('liveTable').innerHTML=rows.map(([n,c])=>
+      `<tr><td>${n} <span style="color:#9aa7b8">${AIRPORTS[n].name}</span></td><td class="n">${c}</td></tr>`).join('');
+    if(!anim) draw(frame);
+  }catch(e){
+    document.getElementById('liveLabel').textContent='live feed unavailable, model still runs';
+  }
+}
+pullTraffic(); setInterval(pullTraffic,12000);
+recompute();
+</script>
+</body>
+</html>

@@ -1,0 +1,35 @@
+# Raw BTS data: too large for GitHub and publicly downloadable (see data/README.md)
+data/01_delay_ontime/*.zip
+analysis/bts_2023_01/
+
+# Third-party reference PDFs (links are listed in data/README.md)
+data/**/*.pdf
+
+# Personal application documents
+2026-27-ICUNJ-URS-Application-Form.pdf
+icunj_application_complete.tex
+Uprety2026 - Summer Research Proposal*.pdf
+
+# Superseded poster drafts (final version is *_final.*)
+poster/Fall_Research_Day_2026_Poster_36x24.pdf
+poster/Fall_Research_Day_2026_Poster_36x24.pptx
+poster/poster_36x24_preview.png
+poster/Fall_Research_Day_2026_Poster_Clean.pptx
+poster/poster_preview.png
+poster/Pranish_Fall_Research_Day_2026_Poster.pdf
+poster/_*
+
+# Python / LaTeX / OS build files
+__pycache__/
+*.pyc
+*.aux
+*.bbl
+*.blg
+*.log
+*.out
+*.synctex.gz
+*.fdb_latexmk
+*.fls
+~$*
+Thumbs.db
+.DS_Store

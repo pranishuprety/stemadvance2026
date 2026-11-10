@@ -1,0 +1,255 @@
+\documentclass[11pt]{article}
+\usepackage[utf8]{inputenc}
+\usepackage[T1]{fontenc}
+\usepackage{geometry}
+\geometry{a4paper, margin=1in}
+\usepackage{graphicx}
+\usepackage{amsmath}
+\usepackage{booktabs}
+\usepackage{hyperref}
+\hypersetup{colorlinks=true, linkcolor=blue, citecolor=blue, urlcolor=blue}
+
+\title{Simulation-Augmented Graph Neural Networks for\\
+Flight Delay Intervention Analysis in the New York Metro Airspace}
+\author{Pranish Uprety \\ Advisor: Dr. Sushil Poudel \\
+Department of Computer Science, Caldwell University}
+\date{\today}
+
+\begin{document}
+\maketitle
+
+\begin{abstract}
+Flight delays cost the U.S. economy tens of billions of dollars annually, and
+because airports share aircraft, crews, and airspace, a disruption at one hub
+propagates through the network rather than staying local \cite{fleurquin2013}.
+Recent graph neural network (GNN) models predict delays accurately by exploiting
+this airport--flight graph structure \cite{cai2023, zeng2021, jiang2022}, and
+causal variants such as CausalNet infer inter-airport influence from data
+\cite{zhu2024}. However, these models remain observational: they answer
+``how late will a flight be?'' but not the operational question ``if I intervene
+now, how much downstream delay do I prevent?'' Answering that requires reasoning
+about counterfactual interventions that historical data does not contain. We
+propose a simulation-augmented GNN that pairs a lightweight Northeast-corridor
+airspace simulator with a graph model to predict the system-wide effect of
+proposed delay interventions, focusing on the New York metropolitan sub-network
+(EWR, JFK, LGA). As a first step, using U.S.\ Bureau of Transportation Statistics
+on-time data (January 2023), we show that delay propagates directionally within
+the corridor: adding neighbor-airport delays improves next-hour delay prediction
+for JFK and LGA (out-of-sample $R^2$ from $0.22$ to $0.35$ and $0.14$ to $0.21$),
+while Newark behaves as an upstream driver (EWR$(t)\rightarrow$JFK$(t{+}1)$,
+$r\approx0.57$). This propagation evidence motivates the central contribution:
+predicting and costing interventions. By translating predicted delay-minutes
+prevented into dollars using standard cost-of-delay estimates \cite{faacost2023},
+the model becomes a cost--benefit tool, evaluated against large real disruptions
+with published economic impact such as the 2025 federal shutdown
+\cite{richmondfed2025, ctp2026}.
+\end{abstract}
+
+\section{Introduction}
+Flight delays are a persistent, costly feature of the U.S. National Airspace
+System (NAS). The Federal Aviation Administration (FAA) estimates the annual cost
+of delay in the tens of billions of dollars \cite{faacost2023}. Crucially,
+delays are not independent events: airports are tightly coupled through shared
+aircraft, crews, and controlled airspace, so a morning disruption at one hub can
+ripple across the network by the afternoon \cite{fleurquin2013}.
+
+Graph neural networks have emerged as the leading approach for delay prediction
+because they exploit this network structure directly
+\cite{cai2023, zeng2021, jiang2022, guo2020}. Yet a predictive model does not
+tell an operator \emph{what to do}. Existing models answer ``will this flight be
+late?'' but not the question operators actually face: ``if I issue a ground delay
+at this airport now, how many downstream delays will I prevent?'' That is a
+\emph{counterfactual} question about the outcome of an intervention that did not
+occur in the data, and observational data alone cannot supply it.
+
+\subsection{Three levels of the problem}
+We frame the work along three levels, of which the third is the contribution:
+\begin{enumerate}
+  \item \textbf{Prediction:} forecast an airport's delay. Mature in prior work.
+  \item \textbf{Propagation:} establish that one airport's delay measurably
+        affects connected airports later in time. We provide direct evidence for
+        this in Section~\ref{sec:evidence}.
+  \item \textbf{Intervention:} predict the counterfactual, system-wide effect of
+        a deliberate operator action (e.g., a 30-minute ground hold at EWR).
+        This is the open gap the proposed model targets.
+\end{enumerate}
+
+\section{Related Work}
+Prediction-oriented GNNs dominate the recent literature. Cai et al.\ separate
+geographical and operational graph structure \cite{cai2023}; Zeng et al.\ model
+time-evolving graphs \cite{zeng2021}; Jiang et al.\ balance local and global
+objectives \cite{jiang2022}; and Guo et al.\ apply dual graph/sequence attention
+for advance forecasts \cite{guo2020}. Edge-centric formulations sharpen
+operational fidelity \cite{tang2026, franco2026}, and standardized benchmarks now
+enable fair, leakage-free comparison across model classes \cite{xu2025}. The
+closest work to ours, CausalNet, learns a dynamic causal graph using Granger
+causality \cite{zhu2024}; however, Granger causality is statistical, not
+interventional, and so it does not estimate the effect of a deliberate
+do-intervention. Classical network science first established that delays
+propagate systemically across the U.S. airport network \cite{fleurquin2013}.
+Our work extends this line from prediction and observation toward intervention.
+
+\section{Preliminary Evidence: Delay Propagation in the NYC Metro}
+\label{sec:evidence}
+Before modeling interventions, we test whether delay propagation is real and
+measurable on actual data.
+
+\paragraph{Data and method.} We use BTS Reporting Carrier On-Time Performance
+data for January 2023 ($75{,}574$ Northeast-corridor departures after cleaning).
+We aggregate departure delay to an hourly airport panel and, for each NYC-metro
+target (EWR, JFK, LGA), compare two ridge-regression models on a temporal holdout
+(last 25\% of hours): a \emph{local-only} model using the airport's own delay
+lags ($t{-}1,t{-}2,t{-}3$) and hour-of-day, versus a \emph{network} model that
+adds corridor neighbors' delays at $t{-}1$.
+
+\paragraph{Result.} Adding neighbor information improves next-hour prediction for
+the downstream hubs but not for Newark (Table~\ref{tab:evidence},
+Figure~\ref{fig:evidence}). A lead--lag analysis confirms the direction: Newark's
+delay at hour $t$ correlates with JFK and LaGuardia delay at $t{+}1$ at
+$r\approx0.57$. Newark thus behaves as an \emph{upstream driver} of the metro
+sub-network, which is precisely the propagation premise the intervention model
+depends on.
+
+\begin{table}[h]
+\centering
+\caption{Out-of-sample prediction of next-hour departure delay, BTS January 2023.}
+\label{tab:evidence}
+\begin{tabular}{lccc}
+\toprule
+Airport & $R^2$ local & $R^2$ network & MAE change \\
+\midrule
+JFK & 0.215 & \textbf{0.351} & $-12\%$ \\
+LGA & 0.138 & \textbf{0.211} & $-10\%$ \\
+EWR & 0.097 & 0.071 & $+8\%$ (driver) \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\begin{figure}[h]
+\centering
+% Upload analysis/evidence_r2.png to Overleaf, then this will render.
+\includegraphics[width=0.9\linewidth]{evidence_r2.png}
+\caption{Adding corridor-neighbor delays improves next-hour delay prediction for
+the downstream NYC hubs (JFK, LGA) but not for the upstream driver (EWR).}
+\label{fig:evidence}
+\end{figure}
+
+\section{Proposed Methods}
+\paragraph{Airspace simulator.} A lightweight discrete-event simulator of the
+Northeast corridor, calibrated against BTS schedules and OpenSky traffic
+\cite{opensky2014}, generating delay dynamics under configurable disruptions.
+
+\paragraph{Graph model with an intervention head.} The airspace is encoded as a
+temporal graph (airports as nodes with time-varying features; scheduled segments
+as edges). A spatiotemporal GNN backbone, following prior architectures
+\cite{cai2023, jiang2022}, is extended with a counterfactual intervention head
+that, given a proposed action (e.g., ``hold EWR departures 30 minutes at 14:00''),
+predicts the resulting system-wide delay profile.
+
+\paragraph{Simulation-augmented training.} Because observational data lacks
+counterfactual outcomes, the simulator produces paired
+(baseline, intervention, outcome) triples across many scenarios. The model is
+trained on a hybrid objective: delay prediction on real BTS/OpenSky data, plus
+counterfactual-outcome prediction on simulated data, following evidence that
+simulator-generated counterfactuals aid intervention reasoning \cite{shi2019}.
+
+\section{Economic Significance}
+Delay outcomes convert directly to cost using FAA per-minute cost-of-delay
+estimates \cite{faacost2023}, so the model's predicted ``delay-minutes prevented''
+becomes ``dollars saved,'' turning it into a cost--benefit tool for operators.
+Large disruptions provide both evaluation targets and economic context: the 2025
+federal shutdown produced roughly one million extra delay work-hours
+($\sim\$66$M) by one difference-in-differences estimate \cite{richmondfed2025},
+while a policy analysis attributed billions in economic impact to blanket FAA
+flight cuts and recommended a targeted, data-driven strategy \cite{ctp2026}, which
+is exactly the intervention-selection problem this model addresses.
+
+\section{Evaluation Plan}
+The model will be evaluated on (i) delay-prediction accuracy on held-out real
+data, (ii) agreement with published post-hoc counterfactual estimates of real
+disruptions (the 2025 shutdown \cite{richmondfed2025} and the January 2023 NOTAM
+outage \cite{icao2023notam}), and (iii) recovery of known qualitative principles,
+such as early upstream interventions dominating late downstream ones.
+
+\section{Near-Term Direction}
+Immediate next steps: add NOAA weather controls to separate true propagation from
+shared weather; extend the panel across multiple months and to $t{+}2,t{+}3$ lags;
+and formalize the NYC metro as a directed sub-network with Newark as the driver.
+These steps harden the propagation evidence before scaling to the full
+intervention model.
+
+\begin{thebibliography}{99}
+
+\bibitem{cai2023}
+K.~Cai, Y.~Li, Y.-P.~Fang, and Y.~Zhu, ``A geographical and operational deep
+graph convolutional approach for flight delay prediction,'' \emph{Chinese Journal
+of Aeronautics}, vol.~36, no.~3, pp.~357--367, 2023.
+
+\bibitem{zeng2021}
+W.~Zeng, J.~Li, Z.~Quan, and X.~Lu, ``A deep learning approach for flight delay
+prediction through time-evolving graphs,'' \emph{IEEE Trans. Intelligent
+Transportation Systems}, vol.~23, no.~8, pp.~11397--11407, 2021.
+
+\bibitem{jiang2022}
+Y.~Jiang \emph{et al.}, ``Multi-task local-global graph network for flight delay
+prediction,'' in \emph{Proc. IEEE GLOBECOM}, 2022, pp.~2374--2379.
+
+\bibitem{guo2020}
+Z.~Guo \emph{et al.}, ``SGDAN: A spatio-temporal graph dual-attention neural
+network for departure flight delay prediction,'' \emph{Sensors}, vol.~20, no.~22,
+art.~6433, 2020.
+
+\bibitem{zhu2024}
+Q.~Zhu, S.~Chen, T.~Guo, Y.~Lv, and W.~Du, ``CausalNet: A Granger-causality-driven
+spatio-temporal graph neural network for flight delay propagation,'' arXiv
+preprint arXiv:2407.15185, 2024.
+
+\bibitem{tang2026}
+Z.~Tang \emph{et al.}, ``An edge-based graph neural network framework for flight
+delay prediction with delay width and delay strength,'' \emph{Aerospace},
+vol.~13, no.~2, art.~161, 2026.
+
+\bibitem{franco2026}
+J.~L.~Franco \emph{et al.}, ``Graph machine learning for flight delay prediction
+due to holding maneuver,'' arXiv preprint arXiv:2502.04233, 2026.
+
+\bibitem{xu2025}
+L.~Xu, X.~Yuan, Y.~Liang, S.~Yin, and Y.~Wu, ``Aeolus: A multi-modal dataset for
+benchmarking flight delay prediction,'' arXiv preprint arXiv:2510.26616, 2025.
+
+\bibitem{fleurquin2013}
+P.~Fleurquin, J.~J.~Ramasco, and V.~M.~Egu\'iluz, ``Systemic delay propagation in
+the US airport network,'' \emph{Scientific Reports}, vol.~3, art.~1159, 2013.
+
+\bibitem{opensky2014}
+M.~Sch\"afer, M.~Strohmeier, V.~Lenders, I.~Martinovic, and M.~Wilhelm,
+``Bringing up OpenSky: A large-scale ADS-B sensor network for research,'' in
+\emph{Proc. ACM/IEEE IPSN}, 2014, pp.~83--94.
+
+\bibitem{shi2019}
+C.~Shi, D.~M.~Blei, and V.~Veitch, ``Adapting neural networks for the estimation
+of treatment effects,'' in \emph{Advances in Neural Information Processing
+Systems}, 2019, pp.~2503--2513.
+
+\bibitem{faacost2023}
+Federal Aviation Administration, ``Cost of delay estimates,'' U.S. Department of
+Transportation, 2023.
+\url{https://www.faa.gov/data_research/aviation_data_statistics}
+
+\bibitem{richmondfed2025}
+Federal Reserve Bank of Richmond, ``The value of government services: Evidence
+from flight delays during the 2025 shutdown,'' \emph{Economic Brief}, no.~25-45,
+2025.
+
+\bibitem{ctp2026}
+Center for Transportation Policy, ``Stabilizing the skies: Lessons from the
+longest government shutdown in U.S. history,'' Arlington, VA, 2026.
+
+\bibitem{icao2023notam}
+International Civil Aviation Organization, ``NOTAM system in the US: January 11,
+2023 outage and subsequent improvements,'' Information Paper IP06, APAC AAITF/18,
+2023.
+
+\end{thebibliography}
+
+\end{document}

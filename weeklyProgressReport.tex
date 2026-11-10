@@ -1,0 +1,106 @@
+\documentclass[11pt]{article}
+\usepackage[utf8]{inputenc}
+\usepackage{geometry}
+\geometry{a4paper, margin=1in}
+\usepackage{enumitem}
+\usepackage{hyperref}
+\usepackage{amsmath}
+
+\title{Weekly Progress Report}
+\author{Pranish Uprety \\ Advisor: Dr. Sushil Poudel}
+\date{Week of June 3--10, 2026}
+
+\begin{document}
+\maketitle
+
+\section{Summary}
+Last week's feedback was that the prototype is promising but the project now
+needs \emph{evidence}, not more model surface. This week was a lighter week
+(travel over the weekend), so I focused it on the right thing: turning
+``we need evidence'' into a concrete, falsifiable experiment that the rest of
+the project can be built around. The deliverable below is the evidence and
+validation plan, plus the first test I propose to run.
+
+\section{Done this week}
+\begin{itemize}[leftmargin=*]
+  \item Reframed the central claim as a testable hypothesis (Section 4) so it
+        can be confirmed or rejected on real data, rather than asserted.
+  \item Specified the exact data, unit of analysis, method, baseline, and
+        success metric for the first evidence experiment.
+  \item Identified a published real-world counterfactual to validate against
+        (Richmond Fed 2025 difference-in-differences shutdown study), so our
+        evaluation in Phase 2.4 is anchored to an external result.
+  \item Confirmed the closest prior work (CausalNet, 2024) uses Granger
+        causality only, which is statistical, not interventional. This keeps
+        our intervention contribution distinct.
+\end{itemize}
+
+\section{Did not get to (and why)}
+\begin{itemize}[leftmargin=*]
+  \item No data pull or coding: I was travelling over the weekend.
+  \item Carrying these to next week: download the BTS on-time slice and run
+        the propagation regression in Section 4.
+\end{itemize}
+
+\section{Evidence plan: does delay actually propagate through the graph?}
+The whole project rests on one premise: a disruption at one airport raises
+delays at connected airports later in the day. Before modeling interventions,
+I want direct evidence that this propagation is real and measurable.
+
+\paragraph{Hypothesis (H1).} A departure-delay shock at a hub airport is
+associated with elevated arrival delays at network-adjacent airports within a
+lag window, beyond what local weather alone explains.
+
+\paragraph{Data.}
+\begin{itemize}[leftmargin=*]
+  \item BTS Reporting Carrier On-Time Performance, 2023--2024 (delay minutes,
+        origin, destination, scheduled and actual times).
+  \item NOAA METAR weather per airport-hour (control variable).
+  \item OpenSky for traffic density (already wired into the prototype).
+\end{itemize}
+
+\paragraph{Method.} Aggregate to the airport-hour level. For each airport,
+regress its arrival delay at hour $t$ on the delays of its upstream neighbors
+at hours $t-1, t-2, \dots$, controlling for local weather and time-of-day:
+\[
+D_{j,t} = \alpha + \sum_{k} \beta_k \, D_{\text{up}(j),\,t-k} + \gamma\, W_{j,t} + \varepsilon_{j,t}.
+\]
+
+\paragraph{Baseline.} A local-only model that uses just airport $j$'s own
+history and weather, with no neighbor (graph) information.
+
+\paragraph{Success metric.} The incremental predictive gain (for example,
+$\Delta R^2$ or reduction in MAE) from adding upstream-neighbor delays. A
+positive, significant $\beta_k$ that decays with graph distance and lag would
+be the first concrete evidence that the graph carries delay, which is the
+premise the intervention model depends on.
+
+\paragraph{Why this matters.} If the graph adds nothing over a local model,
+the GNN framing is not justified. If it does, we have measured the propagation
+effect and can then ask the harder counterfactual question.
+
+\section{Validation anchor (Phase 2.4)}
+The Richmond Fed 2025 study used a difference-in-differences design on roughly
+76 million flight operations to isolate about 1 million extra delay work-hours
+caused by the 2025 shutdown, controlling for weather. This is an external,
+peer-reviewed counterfactual estimate we can compare our model's predicted
+intervention effects against, rather than grading ourselves.
+
+\section{Questions for this meeting}
+\begin{itemize}[leftmargin=*]
+  \item Is H1 the right first evidence target, or would you rather I start
+        from the intervention side directly?
+  \item For the propagation test, do you prefer a simple lagged regression
+        first, or jumping to a Granger-causality formulation like CausalNet?
+  \item Which slice of BTS data should I start with: full 2023--2024, or one
+        representative disruption month?
+\end{itemize}
+
+\section{Plan for next week}
+\begin{itemize}[leftmargin=*]
+  \item Download the BTS on-time slice and build the airport-hour table.
+  \item Run the local-only baseline and the neighbor-augmented model.
+  \item Report the incremental gain as the first evidence figure.
+\end{itemize}
+
+\end{document}

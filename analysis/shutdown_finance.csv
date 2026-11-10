@@ -1,0 +1,4 @@
+metric,delay_minutes,dollars
+"Total delay cost, 2025 shutdown window (gross)",1064942.0,107303555.92
+Excess vs 2024 same-window baseline,401999.0,40505419.24
+Excess vs model normal-counterfactual (shutdown-attributable),409455.0051498753,41256686.318901435
